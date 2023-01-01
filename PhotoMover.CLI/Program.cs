@@ -4,21 +4,21 @@ using Directory = System.IO.Directory;
 
 Console.Title = "PhotoMover";
 
-//Console.Write("Start folder: ");
-var startFolder = @"C:\PhotoMover test files\Start files";// Console.ReadLine();
+Console.Write("Start folder: ");
+var startFolder = Console.ReadLine();
 
-// if (startFolder is null)
-// {
-//     Environment.Exit(1);
-// }
+if (startFolder is null)
+{
+    Environment.Exit(1);
+}
 
-//Console.Write("Results folder: ");
-var resultsFolder = @"C:\PhotoMover test files\Results"; //Console.ReadLine();
+Console.Write("Results folder: ");
+var resultsFolder = Console.ReadLine();
 
-// if (resultsFolder is null)
-// {
-//     Environment.Exit(1);
-// }
+if (resultsFolder is null)
+{
+    Environment.Exit(1);
+}
 
 Console.WriteLine("Getting photo's...");
 
