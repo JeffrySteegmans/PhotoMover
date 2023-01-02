@@ -9,19 +9,31 @@ internal static class PhotoProcessor
 {
     private static readonly List<string> AllowedExtensions = new () { ".jpg", ".jpeg", ".png" };
     
-    internal static void GetPhotos(string folder, ICollection<Photo> photos)
+    internal static void GetPhotos(string folder, Dictionary<int, ICollection<Photo>> photos)
     {
+        Console.WriteLine($"Searching folder: {folder}");
         foreach (var filePath in Directory.GetFiles(folder))
         {
             if (HasInvalidExtension(filePath))
             {
                 continue;
             }
-
+            Console.WriteLine($"\tFound photo: {filePath}");
+            
             var takenDateTime = GetTakenDateTime(filePath);
 
             var photo = Photo.CreatePhoto(filePath, takenDateTime);
-            photos.Add(photo);
+            
+            var year = photo.TakenDateTime.Year;
+
+            if (photos.TryGetValue(year, out ICollection<Photo>? value))
+            {
+                value.Add(photo);
+            }
+            else
+            {
+                photos.Add(year, new List<Photo> { photo });    
+            }
         }
 
         foreach (var subFolder in Directory.GetDirectories(folder))
@@ -37,40 +49,31 @@ internal static class PhotoProcessor
 
     private static DateTime GetTakenDateTime(string filePath)
     {
-    
-        var directories = ImageMetadataReader.ReadMetadata(filePath);
+        try
+        {
+            var directories = ImageMetadataReader.ReadMetadata(filePath);
         
-        // Find the so-called Exif "SubIFD" (which may be null)
-        var subIfdDirectory = directories
-            .OfType<ExifSubIfdDirectory>()
-            .FirstOrDefault();
-
-        // Read the DateTime tag value
-        return subIfdDirectory?
-            .GetDateTime(ExifDirectoryBase.TagDateTimeOriginal) ?? DateTime.MinValue;
+            // Find the so-called Exif "SubIFD" (which may be null)
+            var subIfdDirectory = directories
+                .OfType<ExifSubIfdDirectory>()
+                .FirstOrDefault();
+            
+            // Read the DateTime tag value
+            return subIfdDirectory?
+                .GetDateTime(ExifDirectoryBase.TagDateTimeOriginal) ?? DateTime.MinValue;
+        }
+        catch (Exception)
+        {
+            return DateTime.MinValue;
+        }
     }
     
-    public static Dictionary<int, ICollection<Photo>> GroupAndSortPhotos(List<Photo> photos)
+    public static void SortPhotos(Dictionary<int, ICollection<Photo>> groupedPhotos)
     {
-        var groupedAndSortedPhotos = new Dictionary<int, ICollection<Photo>>();
-        
-        foreach (var photo in photos)
+        foreach (var (year, photos) in groupedPhotos)
         {
-            var year = photo.TakenDateTime.Year;
-
-            if (groupedAndSortedPhotos.TryGetValue(year, out ICollection<Photo>? value))
-            {
-                value.Add(photo);
-            }
-            else
-            {
-                groupedAndSortedPhotos.Add(year, new List<Photo> { photo });    
-            }
-
-            groupedAndSortedPhotos[year] = groupedAndSortedPhotos[year].OrderBy(x => x.TakenDateTime).ToList();
+            groupedPhotos[year] = photos.OrderBy(x => x.TakenDateTime).ToList();
         }
-
-        return groupedAndSortedPhotos;
     }
 
     public static void CopyPhotos(Dictionary<int, ICollection<Photo>> groupedAndSortedPhotos, string resultsFolder)

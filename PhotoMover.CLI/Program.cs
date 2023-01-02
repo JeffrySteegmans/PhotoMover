@@ -18,10 +18,13 @@ if (resultsFolder is null)
 }
 
 Console.WriteLine("Getting photo's...");
-var photos = new List<Photo>();
-
+var photos = new Dictionary<int, ICollection<Photo>>();
 PhotoProcessor.GetPhotos(startFolder, photos);
-var groupedAndSortedPhotos = PhotoProcessor.GroupAndSortPhotos(photos);
-PhotoProcessor.CopyPhotos(groupedAndSortedPhotos, resultsFolder);
+
+Console.WriteLine("Sorting photo's...");
+PhotoProcessor.SortPhotos(photos);
+
+Console.WriteLine("Copying photo's...");
+PhotoProcessor.CopyPhotos(photos, resultsFolder);
 
 Console.WriteLine($"{Environment.NewLine}DONE");
