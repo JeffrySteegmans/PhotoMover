@@ -7,7 +7,7 @@ namespace PhotoMover.CLI;
 
 internal static class PhotoProcessor
 {
-    private static List<string> _allowedExtensions = new () { ".jpg", ".jpeg", ".png" };
+    private static readonly List<string> AllowedExtensions = new () { ".jpg", ".jpeg", ".png" };
     
     internal static void GetPhotos(string folder, ICollection<Photo> photos)
     {
@@ -32,7 +32,7 @@ internal static class PhotoProcessor
 
     private static bool HasInvalidExtension(string filePath)
     {
-        return !_allowedExtensions.Contains(Path.GetExtension(filePath).ToLower());
+        return !AllowedExtensions.Contains(Path.GetExtension(filePath).ToLower());
     }
 
     private static DateTime GetTakenDateTime(string filePath)
@@ -48,5 +48,48 @@ internal static class PhotoProcessor
         // Read the DateTime tag value
         return subIfdDirectory?
             .GetDateTime(ExifDirectoryBase.TagDateTimeOriginal) ?? DateTime.MinValue;
+    }
+    
+    public static Dictionary<int, ICollection<Photo>> GroupAndSortPhotos(List<Photo> photos)
+    {
+        var groupedAndSortedPhotos = new Dictionary<int, ICollection<Photo>>();
+        
+        foreach (var photo in photos)
+        {
+            var year = photo.TakenDateTime.Year;
+
+            if (groupedAndSortedPhotos.TryGetValue(year, out ICollection<Photo>? value))
+            {
+                value.Add(photo);
+            }
+            else
+            {
+                groupedAndSortedPhotos.Add(year, new List<Photo> { photo });    
+            }
+
+            groupedAndSortedPhotos[year] = groupedAndSortedPhotos[year].OrderBy(x => x.TakenDateTime).ToList();
+        }
+
+        return groupedAndSortedPhotos;
+    }
+
+    public static void CopyPhotos(Dictionary<int, ICollection<Photo>> groupedAndSortedPhotos, string resultsFolder)
+    {
+        foreach (var (year, photos) in groupedAndSortedPhotos)
+        {
+            var counter = 1;
+
+            if (!Directory.Exists($@"{resultsFolder}\{year}\"))
+            {
+                Directory.CreateDirectory($@"{resultsFolder}\{year}\");
+            }
+            
+            foreach (var photo in photos)
+            {
+                Console.WriteLine($"Found {photo.FileName}{photo.FileExtension} with date: {photo.TakenDateTime}");
+                File.Copy(photo.FilePath,$@"{resultsFolder}\{year}\{counter:D5}.jpg");
+                counter++;
+            }
+        }
     }
 }
