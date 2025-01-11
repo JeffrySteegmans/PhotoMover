@@ -44,24 +44,12 @@ AnsiConsole.Clear();
 
 if (processPhotos)
 {
-    await processor.Process(
-        photoFolder,
-        resultFolder);
+    processor.Process(
+        new DirectoryInfo(photoFolder),
+        new DirectoryInfo(resultFolder));
 }
 
 AnsiConsole.Write(
     new FigletText("DONE")
         .LeftJustified()
         .Color(Color.Green));
-
-// Console.WriteLine("Getting photo's...");
-// var photos = new Dictionary<int, ICollection<Photo>>();
-// PhotoProcessor.GetPhotos(startFolder, photos);
-//
-// Console.WriteLine("Sorting photo's...");
-// PhotoProcessor.SortPhotos(photos);
-//
-// Console.WriteLine("Copying photo's...");
-// PhotoProcessor.CopyPhotos(photos, resultsFolder);
-//
-// Console.WriteLine($"{Environment.NewLine}DONE");
